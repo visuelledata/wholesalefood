@@ -116,7 +116,9 @@ wholesale_price$supplier <-
 
 
 
-
+wholesale_price <- wholesale_price %>% 
+  filter(!is.na(price_morning)) 
+  
 
 
 #EDA
@@ -126,15 +128,21 @@ wholesale_price$supplier <-
 qplot(supply_intake, price_morning, data = wholesale_supply_livestock, color = food_item)
 qplot(supply_intake, price_morning, data = wholesale_supply_livestock, color = food_item)
 qplot(supply_intake, price_morning, data = filter(wholesale_supply_livestock, food_item == 'Live pig'), color = food_item)
-
+#we dont have price data on multiple supply days hence the points clustered to the left
 
 #EDA
-wholesale_price %>%
-  select(-food_item) %>% 
+wholesale_price %>% 
+  ggplot(aes(date_morning, price_morning, color = food_category)) + 
+  geom_point() + 
+  facet_wrap(~food_category, scale = 'free_y') #can see some very strong associations within the data
+
+wholesale_price %>% 
   group_by(date_morning, food_category) %>% 
   summarize(avg_morning_price = mean(price_morning)) %>% 
-  ggplot(aes(date_morning, avg_morning_price)) + 
-  geom_point()   #data must be analyzed by food_category
+  ggplot(aes(date_morning, avg_morning_price, color = food_category)) + 
+  geom_point() +  #there is also a strong correlation between 'freshwater fish, marine fish, and vegetables with time
+  facet_wrap(~food_category, scale = 'free_y')
+#data must be analyzed by food_category
 
 
 #Livestock / Poultry must be analyzed by food_type
@@ -147,8 +155,21 @@ wholesale_price %>%
   facet_wrap(~food_item)
 
 wholesale_price %>%
-  select(-food_item) %>%
   filter(food_category == 'Freshwater fish') %>% 
+  group_by(date_morning, food_category) %>% 
+  summarize(avg_morning_price = mean(price_morning)) %>% 
+  ggplot(aes(date_morning, avg_morning_price)) + 
+  geom_point()
+
+#Eggs
+wholesale_price %>% 
+  filter(food_category == 'Eggs') %>% 
+  ggplot(aes(date_morning, price_morning, color = food_item)) + 
+  geom_point() 
+
+wholesale_price %>%
+  select(-food_item) %>%
+  filter(food_category == 'Eggs') %>% 
   group_by(date_morning, food_category) %>% 
   summarize(avg_morning_price = mean(price_morning)) %>% 
   ggplot(aes(date_morning, avg_morning_price)) + 
@@ -177,9 +198,9 @@ wholesale_price %>%
 
 wholesale_price %>% 
   filter(food_category == 'Marine fish') %>% 
-  ggplot(aes(date_morning, price_morning)) + 
+  ggplot(aes(date_morning, price_morning, color = food_item)) + 
   geom_point() + 
-  facet_wrap(~food_item)
+  facet_wrap(~food_item, scale = 'free_y')
 
 wholesale_price %>%
   select(-food_item) %>%
