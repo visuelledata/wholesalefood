@@ -115,12 +115,21 @@ wholesale_price <- wholesale_price %>%
 
 write_csv(wholesale_price, path = 'tidied_wholesale_price.csv')
 
+#Too easily remove the N/A's
 wholesale_price <- read_csv('tidied_wholesale_price.csv', na = c('-', 'NA'), quoted_na = FALSE)
 supply_intake <- read_csv('tidied_supply_intake.csv', na = c('-', 'NA'), quoted_na = FALSE)
 
-
+#Remove the additional empty columns
 supply_intake <- supply_intake %>% 
   janitor::remove_empty_rows() %>% 
   select(date_reported, everything())
 wholesale_price <- wholesale_price %>% 
   janitor::remove_empty_rows()
+
+
+#include string manipulation
+#function for unit conversion
+#write as r files
+#move the joined table to here
+
+
