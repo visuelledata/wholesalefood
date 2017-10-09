@@ -73,27 +73,7 @@ supply_intake <- supply_intake %>%
 wholesale_price <- wholesale_price %>% 
   select(date_morning, everything(), -date_reported, -supply_intake)
 
-#convert to kg
-#Picul = 60.478982 kg / picul
-#catty = .60478982 kg / catty
-wholesale_price <- wholesale_price %>% 
-  filter((unit == '($ / Catty)') | (unit == '($ / Picul)') | (unit == '($ / Egg)')) 
 
-
-wholesale_price1 <- wholesale_price %>% 
-  filter(unit == '($ / Catty)') %>% 
-  mutate(price_morning =  price_morning / .60478982,
-         unit = 'hkd / kg') 
-  
-wholesale_price2 <- wholesale_price %>% 
-  filter(unit == '($ / Picul)') %>% 
-  mutate(price_morning = price_morning / 60.478982,
-         unit = 'hkd / kg')
-
-wholesale_price3 <- wholesale_price %>% 
-  filter(unit != '($ / Picul)' & unit != '($ / Catty)')
-
-wholesale_price <- bind_rows(wholesale_price1, wholesale_price2, wholesale_price3)
 
 #divide supply livestock / poultry out of supply intake, as it is the only supply_intake cat with a food_item column
 intake_livestock <- supply_intake %>% 
@@ -104,7 +84,7 @@ wholesale_supply_livestock <- wholesale_price %>%
   filter(food_category == 'Livestock / Poultry') %>% 
   inner_join(intake_livestock, by = c('date_morning', 'food_category', 'food_item')) 
 #No reason to match supply_intake to price_morning with other categories as there isn't any way to know how much of each
-#fish was imported and any correlation to supply 
+#fish was imported 
 
 
 

@@ -5,8 +5,7 @@ library(stringr)
 
 ### This script is to do initial import and initial cleaning of the data, then re-export it.
 
-#Picul = 60.478982 kg
-#catty = .60478982 kg
+
 
 
 
@@ -109,7 +108,7 @@ wholesale_price$provided_by <-
 
 #removes rows with no price information
 wholesale_price <- wholesale_price %>% 
-  filter(!is.na(price_morning)) 
+  filter(!is.na(price_morning) & price_morning != 0) 
 
 
 
@@ -126,9 +125,18 @@ supply_intake <- supply_intake %>%
 wholesale_price <- wholesale_price %>% 
   janitor::remove_empty_rows()
 
+#divide supply livestock / poultry out of supply intake, as it is the only supply_intake cat with a food_item column
+intake_livestock <- supply_intake %>% 
+  filter(food_category == 'Livestock / Poultry')
+rename(intake_livestock, num_animals = unit)
 
+wholesale_supply_livestock <- wholesale_price %>% 
+  filter(food_category == 'Livestock / Poultry') %>% 
+  inner_join(intake_livestock, by = c('date_morning', 'food_category', 'food_item')) 
+
+#No reason to match supply_intake to price_morning with other categories as there isn't any way to know how much of each
+#fish was imported 
 #include string manipulation
-#function for unit conversion
 #write as r files
 #move the joined table to here
 
