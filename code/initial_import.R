@@ -1,12 +1,9 @@
 library(tidyverse)
 library(janitor)
 library(stringr)
+library(lubridate)
 
-
-### This script is to do initial import and initial cleaning of the data, then re-export it.
-
-
-
+### This script is to do initial import and cleaning of the data, then re-export it.
 
 
 file_names_supply <- list.files(path = 'original_supply_data', pattern = '*.csv')
@@ -52,7 +49,8 @@ supply_intake <- supply_intake %>%
   remove_empty_rows() 
 
 supply_intake <- supply_intake %>% 
-  filter(!is.na(supply_intake) & supply_intake != 0) #removes row with missing values and days with no intake
+  filter(!is.na(supply_intake) & supply_intake != 0) %>%  #removes row with missing values and days with no intake
+  select(date_morning, everything())
 # which is not useful information
 
 write_csv(supply_intake, path = 'tidied_supply_intake.csv')
@@ -97,13 +95,13 @@ wholesale_price$price_morning <- as.double(wholesale_price$price_morning)
 
 # Sort the columns into a more logical order
 wholesale_price <- wholesale_price %>% 
-  select(date_morning, everything()) %>% 
+  select(date_morning, food_category, food_item, price_morning, everything()) %>% 
   select(-data_from, -date_reported) #all data is from 'yesterday'
 
 
-#string manipulation on supplier & units
+#string manipulation on provided_by & units
 wholesale_price$provided_by <- 
-  str_replace(wholesale_price$provided_by, "Major wholesalers af the Government Cheung Sha Wan and Western Wholesale 
+  str_replace(wholesale_price$provided_by, "Major wholesalers at the Government Cheung Sha Wan and Western Wholesale 
               Food Markets", 'Major wholesalers of the Government Cheung Sha Wan and Western Wholesale Food Markets')
 
 #removes rows with no price information
@@ -118,26 +116,14 @@ write_csv(wholesale_price, path = 'tidied_wholesale_price.csv')
 wholesale_price <- read_csv('tidied_wholesale_price.csv', na = c('-', 'NA'), quoted_na = FALSE)
 supply_intake <- read_csv('tidied_supply_intake.csv', na = c('-', 'NA'), quoted_na = FALSE)
 
-#Remove the additional empty columns
-supply_intake <- supply_intake %>% 
-  janitor::remove_empty_rows() %>% 
-  select(date_reported, everything())
-wholesale_price <- wholesale_price %>% 
-  janitor::remove_empty_rows()
+wholesale_price$date_morning <- ymd(wholesale_price$date_morning)
+supply_intake$date_morning <- ymd(supply_intake$date_morning)
 
-#divide supply livestock / poultry out of supply intake, as it is the only supply_intake cat with a food_item column
-intake_livestock <- supply_intake %>% 
-  filter(food_category == 'Livestock / Poultry')
-rename(intake_livestock, num_animals = unit)
+file.remove('tidied_wholesale_price.csv')
+file.remove('tidied_supply_intake.csv')
 
-wholesale_supply_livestock <- wholesale_price %>% 
-  filter(food_category == 'Livestock / Poultry') %>% 
-  inner_join(intake_livestock, by = c('date_morning', 'food_category', 'food_item')) 
-
-#No reason to match supply_intake to price_morning with other categories as there isn't any way to know how much of each
-#fish was imported 
-#include string manipulation
-#write as r files
-#move the joined table to here
-
+write_csv(wholesale_price, path = 'tidied_wholesale_price.csv')
+write_csv(supply_intake, path = 'tidied_supply_intake.csv')
+write_rds(wholesale_price, path = 'tidied_wholesale_price.rds')
+write_rds(supply_intake, path = 'tidied_supply_intake.rds')
 

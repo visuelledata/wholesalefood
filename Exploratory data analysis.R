@@ -1,17 +1,9 @@
 library(tidyverse)
 library(lubridate)
-library(htmltools)
 library(htmlwidgets)
-library(stringr)
 
-wholesale_price <- read_csv('tidy_wholesale_price.csv', na = c('-', 'NA'), quoted_na = FALSE)
-supply_intake <- read_csv('tidy_supply_intake.csv', na = c('-', 'NA'), quoted_na = FALSE)
-
-supply_intake <- supply_intake %>% 
-  janitor::remove_empty_rows() %>% 
-  select(date_reported, everything())
-wholesale_price <- wholesale_price %>% 
-  janitor::remove_empty_rows()
+wholesale_price <- read_rds('tidied_wholesale_price.rds')
+supply_intake <- read_rds('tidied_supply_intake.rds')
 
 #rename variables appropriately
 #convert everything to kg
@@ -32,48 +24,7 @@ wholesale_price <- wholesale_price %>%
 ## Supply intake
 # no food_item for specific fish
 # unit - 
-  # nos = numbers
-
-#This shows that 'data_from' is not needed, since it's only value is '(Yesterday)' and there is no data when 'data_from' 
-  # is 'NA'
-# View(wholesale_price, filter(is.na(data_from)))  
-wholesale_price <- wholesale_price %>% 
-  filter(!is.na(data_from)) %>%  # Removes rows containing no data
-  select(-data_from) #removes the 'data_from as the only value for it is '(Yesterday)'
-
-#an observation of with a 'supply_intake value of 0' doesn't give us any additional information, so we can remove it
-#
-supply_intake <- supply_intake %>% 
-  filter(!is.na(supply_intake) & supply_intake != 0) 
-
-
-# Sort the columns into a more logical order
-wholesale_price <- wholesale_price %>% 
-  select(date_reported, everything())
-
-# Parse columns into correct types
-wholesale_price$food_category <- as.factor(wholesale_price$food_category)
-wholesale_price$date_morning <- dmy(wholesale_price$date_reported) - 1 #convert reported date to date that the data if from
-wholesale_price$price_morning <- as.double(wholesale_price$price_morning)
-wholesale_price$supply_intake <- as.double(wholesale_price$supply_intake)
-
-supply_intake$date_morning <- dmy(supply_intake$date_reported) - 1
-supply_intake$food_category <- as.factor(supply_intake$food_category)
-supply_intake$supply_intake <- as.double(supply_intake$supply_intake)
-
-
-supply_intake <- supply_intake %>% 
-  janitor::remove_empty_rows()
-
-wholesale_price <- wholesale_price %>% 
-  janitor::remove_empty_rows()
-
-supply_intake <- supply_intake %>% 
-  select(date_morning, everything(), -data_from, -date_reported, -price_this_morning)
-wholesale_price <- wholesale_price %>% 
-  select(date_morning, everything(), -date_reported, -supply_intake)
-
-
+# nos = numbers
 
 #divide supply livestock / poultry out of supply intake, as it is the only supply_intake cat with a food_item column
 intake_livestock <- supply_intake %>% 
@@ -85,21 +36,6 @@ wholesale_supply_livestock <- wholesale_price %>%
   inner_join(intake_livestock, by = c('date_morning', 'food_category', 'food_item')) 
 #No reason to match supply_intake to price_morning with other categories as there isn't any way to know how much of each
 #fish was imported 
-
-
-
-#string manipulation on supplier & units
-wholesale_price$supplier <- 
-  str_replace(wholesale_price$supplier, "Major wholesalers af the Government Cheung Sha Wan and Western Wholesale 
-              Food Markets", 'Major wholesalers of the Government Cheung Sha Wan and Western Wholesale Food Markets')
-
-
-
-
-wholesale_price <- wholesale_price %>% 
-  filter(!is.na(price_morning)) 
-  
-
 
 #EDA
 
